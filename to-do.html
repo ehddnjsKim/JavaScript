@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>나의 할일</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 30px;
+      }
+
+      #todoContainer {
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #toDo {
+        width: 100%;
+        padding: 5px;
+        margin-bottom: 10px;
+      }
+
+      #taskList {
+        width: 100%;
+        list-style: none;
+        padding: 0;
+      }
+
+      li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px;
+        border-bottom: 1px solid #ccc;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 5px;
+      }
+
+      button {
+        padding: 3px 6px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="todoContainer">
+      <h2 id="title">나의 할일</h2>
+      <input type="text" id="toDo" placeholder="오늘의 할일 입력" />
+      <button onclick="saveNote()">입력</button>
+      <ul id="taskList"></ul>
+    </div>
+
+    <script>
+      function saveNote() {
+        const inputValue = document.getElementById("toDo").value;
+        if (inputValue === "") return;
+
+        const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        savedTasks.push(inputValue);
+        localStorage.setItem("tasks", JSON.stringify(savedTasks));
+
+        addTaskToDOM(inputValue);
+        document.getElementById("toDo").value = "";
+      }
+
+      function addTaskToDOM(taskText) {
+        const taskList = document.getElementById("taskList");
+
+        const newTask = document.createElement("li");
+        newTask.textContent = taskText;
+
+        const buttonGroup = document.createElement("div");
+        buttonGroup.classList.add("button-group");
+
+        const editButton = document.createElement("button");
+        editButton.textContent = "수정";
+        editButton.onclick = function () {
+          const newText = prompt("새 할 일을 입력하세요:", taskText);
+          if (newText) {
+            newTask.textContent = newText;
+            updateTaskInLocalStorage(taskText, newText);
+          }
+        };
+
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "삭제";
+        deleteButton.onclick = function () {
+          taskList.removeChild(newTask);
+          removeTaskFromLocalStorage(taskText);
+        };
+
+        buttonGroup.appendChild(editButton);
+        buttonGroup.appendChild(deleteButton);
+        newTask.appendChild(buttonGroup);
+        taskList.appendChild(newTask);
+      }
+
+      function updateTaskInLocalStorage(oldTask, newTask) {
+        let savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        const index = savedTasks.indexOf(oldTask);
+        if (index !== -1) {
+          savedTasks[index] = newTask;
+          localStorage.setItem("tasks", JSON.stringify(savedTasks));
+        }
+      }
+
+      function removeTaskFromLocalStorage(taskText) {
+        let savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        savedTasks = savedTasks.filter((task) => task !== taskText);
+        localStorage.setItem("tasks", JSON.stringify(savedTasks));
+      }
+
+      window.onload = function () {
+        const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        savedTasks.forEach((task) => {
+          addTaskToDOM(task);
+        });
+      };
+    </script>
+  </body>
+</html>

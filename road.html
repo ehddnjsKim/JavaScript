@@ -1,124 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <div id="map" style="width: 500px; height: 400px"></div>
+    <title>로드킬 사고 다발지역</title>
     <script
       type="text/javascript"
       src="//dapi.kakao.com/v2/maps/sdk.js?appkey=66029665391fbbd3e428b26e1daa98d4"
     ></script>
-    <script>
-      var container = document.getElementById("map");
-      var options = {
-        center: new kakao.maps.LatLng(33.450701, 126.570667),
-        level: 3,
-      };
-
-      var map = new kakao.maps.Map(container, options);
-    </script>
-    <title>Document</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      #controls {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      #region {
+        width: 200px;
+        height: 40px;
+        font-size: 16px;
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      button {
+        width: 120px;
+        height: 40px;
+        font-size: 16px;
+        margin-left: 10px;
+        border: none;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      #map {
+        width: 700px;
+        height: 600px;
+        border: 2px solid #ccc;
+        border-radius: 10px;
+      }
+    </style>
   </head>
   <body>
-    <h2>로드킬 사고 다발지역</h2>
-    <label for="region">지역 선택: </label>
-    <select name="region" id="region">
-      <option value="서울경기" selected>서울경기</option>
-      <option value="강원">강원</option>
-      <option value="충북">충북</option>
-      <option value="대전충남">대전충남</option>
-    </select>
-    <button onclick="loadData()">조회하기</button>
-    <div id="weatherInfo">데이터를 불러오는 중입니다....</div>
+    <div id="controls">
+      <h2>로드킬 사고 다발지역</h2>
+      <label for="region">지역 선택: </label>
+      <select name="region" id="region">
+        <option value="서울경기">서울경기</option>
+        <option value="강원">강원</option>
+        <option value="충북">충북</option>
+        <option value="대전충남">대전충남</option>
+      </select>
+      <button onclick="moveMap()">조회하기</button>
+    </div>
     <div id="map"></div>
+
     <script>
       let map;
       let marker;
-      const serviceKey =
-        "TOzUiqu+esY3FMU5yuNsX3HGY9eJGn8mgBw0fxraR+Lep2aB5Hf6DQ1cQNp47xuIrGxGZNv0Qx2EyE1tshrcQQ==";
-      function loadData() {
-        const selected = document.getElementById("region").value;
-        const [, cityAreaId] = selected.split("|");
-        const now = new Date();
-        const CURRENT_DATE = `${now.getFullYear()}${String(
-          now.getMonth() + 1
-        ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}00`;
-        const DAY = 3;
-        const url = `https://apis.data.go.kr/1360000/TourStnInfoService1/getCityTourClmIdx1?serviceKey=${encodeURIComponent(
-          serviceKey
-        )}&pageNo=1&numOfRows=10&dataType=JSON&CURRENT_DATE=${CURRENT_DATE}&DAY=${DAY}&CITY_AREA_ID=${cityAreaId}`;
-        fetch(url)
-          .then((res) => res.json())
-          .then((data) => {
-            console.log("전체 응답 구조 확인:", JSON.stringify(data, null, 2));
 
-            const header = data.response?.header;
-            const body = data.response?.body;
-
-            if (header?.resultCode !== "00") {
-              document.getElementById("weatherInfo").innerText =
-                "해당 지역의 데이터가 없습니다.";
-              return;
-            }
-
-            const items = body?.items?.item;
-
-            if (!items || items.length === 0) {
-              document.getElementById("weatherInfo").innerText =
-                "해당 지역의 데이터가 없습니다.";
-              return;
-            }
-
-            let html = "";
-            items.forEach((item, index) => {
-              html += `
-        <strong>날짜:</strong> ${item.tm}<br>
-        <strong>지역:</strong> ${item.totalCityName}<br>
-        <strong>체감기후지수:</strong> ${item.kmaTci}<br>
-        <strong>등급:</strong>
-        <span class="grade ${item.TCI_GRADE}">${item.TCI_GRADE}</span>
-        <hr>
-      `;
-
-              if (index === 0) {
-                moveMapByCityName(item.totalCityName);
-              }
-            });
-
-            document.getElementById("weatherInfo").innerHTML = html;
-          })
-          .catch((err) => {
-            console.error("fetch 실패 또는 파싱 오류:", err);
-            document.getElementById("weatherInfo").innerText =
-              "데이터 불러오기 실패";
-          });
+      function initMap() {
+        const container = document.getElementById("map");
+        const options = {
+          center: new kakao.maps.LatLng(37.5665, 126.978), // 서울 중심
+          level: 9,
+        };
+        map = new kakao.maps.Map(container, options);
       }
 
-      function moveMapByCityName(address) {
-        const geocoder = new kakao.maps.services.Geocoder();
-        geocoder.addressSearch(address, function (result, status) {
-          if (status === kakao.maps.services.Status.OK) {
-            const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
-            map.setCenter(coords);
-            if (marker) marker.setMap(null);
-            marker = new kakao.maps.Marker({
-              map: map,
-              position: coords,
-            });
-          } else {
-            console.warn("주소를 찾을 수 없습니다:", address);
-          }
-        });
+      const locations = {
+        서울경기: { lat: 37.5665, lng: 126.978 },
+        강원: { lat: 37.8854, lng: 127.7298 },
+        충북: { lat: 36.6357, lng: 127.4914 },
+        대전충남: { lat: 36.3504, lng: 127.3845 },
+      };
+
+      function moveMap() {
+        const selectedRegion = document.getElementById("region").value;
+        const location = locations[selectedRegion];
+
+        if (location) {
+          const coords = new kakao.maps.LatLng(location.lat, location.lng);
+          map.setCenter(coords);
+
+          if (marker) marker.setMap(null);
+
+          marker = new kakao.maps.Marker({
+            map: map,
+            position: coords,
+          });
+
+          marker.setAnimation(kakao.maps.Animation.BOUNCE);
+        } else {
+          console.warn("잘못된 지역 선택:", selectedRegion);
+        }
       }
 
       window.onload = function () {
-        kakao.maps.load(function () {
-          map = new kakao.maps.Map(document.getElementById("map"), {
-            center: new kakao.maps.LatLng(37.21747062, 126.8719943), // 서울 중심
-            level: 9,
-          });
-          loadData(); // 초기 로딩
-        });
+        initMap();
       };
     </script>
   </body>
